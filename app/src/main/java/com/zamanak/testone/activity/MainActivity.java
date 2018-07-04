@@ -1,4 +1,4 @@
-package com.zamanak.testone;
+package com.zamanak.testone.activity;
 
 import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
@@ -6,6 +6,8 @@ import android.os.Bundle;
 import android.support.v7.widget.AppCompatTextView;
 import android.util.Log;
 import android.view.View;
+
+import com.zamanak.testone.R;
 
 import io.reactivex.Observable;
 import io.reactivex.Observer;
@@ -19,7 +21,7 @@ import io.reactivex.schedulers.Schedulers;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
-    private AppCompatTextView tvCustomDataType;
+    private AppCompatTextView tvCustomDataType, tvOperators;
     private static final String TAG = "Observer";
 
     /**
@@ -38,8 +40,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        tvCustomDataType = findViewById(R.id.tv_custom_data_type);
-        tvCustomDataType.setOnClickListener(this);
+        setFindViewByIds();
+        setOnClickListener();
 
         // 1- create observable
         Observable<String> animalObservable = getAnimalObservable();
@@ -106,9 +108,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }).subscribeWith(animalAllCapsDispoObserver));
 
 
-
-
     }
+
 
     //observer for one observable
     private Observer<String> getAnimalObserver() {
@@ -191,10 +192,25 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         compositeDisposable.clear();
     }
 
+
+    private void setFindViewByIds() {
+        tvCustomDataType = findViewById(R.id.tv_custom_data_type);
+        tvOperators = findViewById(R.id.tv_operators);
+    }
+
+    private void setOnClickListener() {
+
+        tvCustomDataType.setOnClickListener(this);
+        tvOperators.setOnClickListener(this);
+    }
+
     @Override
     public void onClick(View v) {
-        if (v.getId()==tvCustomDataType.getId()){
-            startActivity(new Intent(this,NoteDataTypeActivity.class));
+
+        if (v.getId() == tvCustomDataType.getId()) {
+            startActivity(new Intent(this, NoteDataTypeActivity.class));
+        }else if (v.getId()==tvOperators.getId()){
+            startActivity(new Intent(this, OperatorsActivity.class));
         }
     }
 }
