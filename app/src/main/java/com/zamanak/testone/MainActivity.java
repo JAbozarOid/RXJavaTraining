@@ -1,12 +1,14 @@
 package com.zamanak.testone;
 
+import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.AppCompatTextView;
 import android.util.Log;
+import android.view.View;
 
 import io.reactivex.Observable;
 import io.reactivex.Observer;
-import io.reactivex.Scheduler;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
@@ -15,8 +17,9 @@ import io.reactivex.functions.Predicate;
 import io.reactivex.observers.DisposableObserver;
 import io.reactivex.schedulers.Schedulers;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
+    private AppCompatTextView tvCustomDataType;
     private static final String TAG = "Observer";
 
     /**
@@ -34,6 +37,9 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        tvCustomDataType = findViewById(R.id.tv_custom_data_type);
+        tvCustomDataType.setOnClickListener(this);
 
         // 1- create observable
         Observable<String> animalObservable = getAnimalObservable();
@@ -183,5 +189,12 @@ public class MainActivity extends AppCompatActivity {
         //disposable.dispose();
 
         compositeDisposable.clear();
+    }
+
+    @Override
+    public void onClick(View v) {
+        if (v.getId()==tvCustomDataType.getId()){
+            startActivity(new Intent(this,NoteDataTypeActivity.class));
+        }
     }
 }
