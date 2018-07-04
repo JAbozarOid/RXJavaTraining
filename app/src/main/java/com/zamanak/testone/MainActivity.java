@@ -8,8 +8,11 @@ import io.reactivex.Observable;
 import io.reactivex.Observer;
 import io.reactivex.Scheduler;
 import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Function;
 import io.reactivex.functions.Predicate;
+import io.reactivex.observers.DisposableObserver;
 import io.reactivex.schedulers.Schedulers;
 
 public class MainActivity extends AppCompatActivity {
@@ -21,6 +24,11 @@ public class MainActivity extends AppCompatActivity {
      * if the activity / fragment is already destroyed, as the Observer subscription is still alive, it tries to update already destroyed activity. In this case it can throw a memory leak. So using the Disposables, the un-subscription can be when the activity is destroyed.
      */
     private Disposable disposable;
+
+    /**
+     * Can maintain list of subscriptions in a pool and can dispose them all at once.Usually we call compositeDisposable.clear() in onDestroy() method, but you can call anywhere in the code
+     */
+    private CompositeDisposable compositeDisposable = new CompositeDisposable();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,8 +45,9 @@ public class MainActivity extends AppCompatActivity {
          * onError(): In case of any error, onError() method will be called.
          * onComplete(): When an Observable completes the emission of all the items, onComplete() will be called.
          */
-        Observer<String> animalObserver = getAnimalObserver();
-
+        //Observer<String> animalObserver = getAnimalObserver();
+        DisposableObserver<String> animalDispoObserver = getAnimalDispoObserver(); // filter animals that start with letter 'b'
+        DisposableObserver<String> animalAllCapsDispoObserver = getAnimalsAllCapsDispoObserver(); // just convert all animals name to upper case
 
         // 3-  Make Observer subscribe to Observable so that it can start receiving the data.
         /**
@@ -53,7 +62,7 @@ public class MainActivity extends AppCompatActivity {
                 .subscribe(animalObserver);*/
 
         // user filter() operator to filter animal names which starts with letter 'b' will be filtered
-        animalObservable
+        /*animalObservable
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .filter(new Predicate<String>() {
@@ -62,11 +71,40 @@ public class MainActivity extends AppCompatActivity {
                         return s.toLowerCase().startsWith("b");
                     }
                 })
-                .subscribeWith(animalObserver);
+                .subscribeWith(animalObserver);*/
+
+        /**
+         * filter() is used to filter out the animal names starting with 'b'
+         */
+        compositeDisposable.add(animalObservable.subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread()).filter(new Predicate<String>() {
+            @Override
+            public boolean test(String s) throws Exception {
+                return s.toLowerCase().startsWith("b");
+            }
+        }).subscribeWith(animalDispoObserver));
+
+        /**
+         * filter() is used to filter out the animal names starting with 'c'
+         * map() is used to transform all the character to uppercase
+         */
+        compositeDisposable.add(animalObservable.subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread()).filter(new Predicate<String>() {
+            @Override
+            public boolean test(String s) throws Exception {
+                return s.toLowerCase().startsWith("c");
+            }
+        }).map(new Function<String, String>() {
+            @Override
+            public String apply(String s) throws Exception {
+                return s.toUpperCase();
+            }
+        }).subscribeWith(animalAllCapsDispoObserver));
+
+
 
 
     }
 
+    //observer for one observable
     private Observer<String> getAnimalObserver() {
         return new Observer<String>() {
             @Override
@@ -77,12 +115,12 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onNext(String s) {
-                Log.d(TAG, "onNext: "+s);
+                Log.d(TAG, "onNext: " + s);
             }
 
             @Override
             public void onError(Throwable e) {
-                Log.e(TAG, "onError: "+ e.getMessage() );
+                Log.e(TAG, "onError: " + e.getMessage());
             }
 
             @Override
@@ -92,10 +130,49 @@ public class MainActivity extends AppCompatActivity {
         };
     }
 
-    private Observable<String> getAnimalObservable(){
+    //observer for handle multiple observable
+    private DisposableObserver<String> getAnimalDispoObserver() {
+        return new DisposableObserver<String>() {
+            @Override
+            public void onNext(String s) {
+                Log.d(TAG, "onNext: " + s);
+            }
+
+            @Override
+            public void onError(Throwable e) {
+                Log.e(TAG, "onError: " + e.getMessage());
+            }
+
+            @Override
+            public void onComplete() {
+                Log.d(TAG, "onComplete: " + "All items are emitted");
+            }
+        };
+    }
+
+    private DisposableObserver<String> getAnimalsAllCapsDispoObserver() {
+        return new DisposableObserver<String>() {
+            @Override
+            public void onNext(String s) {
+                Log.d(TAG, "onNext: " + s);
+            }
+
+            @Override
+            public void onError(Throwable e) {
+                Log.e(TAG, "onError: " + e.getMessage());
+            }
+
+            @Override
+            public void onComplete() {
+                Log.d(TAG, "onComplete: " + "All items are emitted");
+            }
+        };
+    }
+
+    private Observable<String> getAnimalObservable() {
         // Here just() operator is used to emit few animal names.
         //return Observable.just("Ant", "Bee", "Cat", "Dog", "Fox");
-        return Observable.fromArray("Ant","Ape","Bat","Bee","Bear","ButterFly","Cat","Crab","Cod","Dog","Dove","Fox","Frog");
+        return Observable.fromArray("Ant", "Ape", "Bat", "Bee", "Bear", "ButterFly", "Cat", "Crab", "Cod", "Dog", "Dove", "Fox", "Frog");
     }
 
     @Override
@@ -103,6 +180,8 @@ public class MainActivity extends AppCompatActivity {
         super.onDestroy();
 
         // don't send events once the activity is destroyed
-        disposable.dispose();
+        //disposable.dispose();
+
+        compositeDisposable.clear();
     }
 }
