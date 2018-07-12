@@ -160,7 +160,7 @@ public class DetailOperatorActivity extends Activity {
                       }).subscribeWith(new DisposableObserver<User>() {
             @Override
             public void onNext(User user) {
-                Log.e(FILTERTAG, "onNext: "+user.getName() + ", " + user.getGender());
+                Log.d(FILTERTAG, "onNext: "+user.getName() + ", " + user.getGender());
             }
 
             @Override
